@@ -28,62 +28,48 @@ public class TransactionService {
     private static final String typeWin = "win";
 
     public BalanceResponse balance(Long playerId){
-        Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found!"));
+        Player player = findPlayer(playerId);
+
         return new BalanceResponse(playerId, player.getBalance());        
     }
 
     public BetWinResponse bet(BetWinRequest betWinRequest){
-        Player player = playerRepository.findById(betWinRequest.player())
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found!"));
-        
+        Player player = findPlayer(betWinRequest.player());
         Double value = betWinRequest.value();
-        player.withdrawal(value);
-        playerRepository.save(player);
 
-        Transaction transaction = new Transaction(player, value, false, typeBet);
-        transaction = transactionRepository.save(transaction);
+        player = withdrawal(player, value);
+        Transaction transaction = createTransaction(player, value, typeBet);
 
-        return new BetWinResponse(player.getPlayerId(), player.getBalance(), transaction.getTransactionId());
+        return createBetWinResponse(player, transaction.getTransactionId());
     }
 
     public BetWinResponse win(BetWinRequest betWinRequest){
-        Player player = playerRepository.findById(betWinRequest.player())
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found!"));
-        
+        Player player = findPlayer(betWinRequest.player());
         Double value = betWinRequest.value();
-        player.deposit(value);
-        playerRepository.save(player);
 
-        Transaction transaction = new Transaction(player, value, false, typeWin);
-        transaction = transactionRepository.save(transaction);
-
-        return new BetWinResponse(player.getPlayerId(), player.getBalance(), transaction.getTransactionId());
+        player = deposit(player, value);
+        Transaction transaction = createTransaction(player, value, typeWin);
+        
+        return createBetWinResponse(player, transaction.getTransactionId());
     }
 
     public Object rollback(RollbackRequest rollbackRequest){
-        Player player = playerRepository.findById(rollbackRequest.player())
-                .orElseThrow(() -> new ResourceNotFoundException("Player not found!"));
-
-        Transaction transaction = transactionRepository.findById(rollbackRequest.txn())
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found!"));
+        Player player = findPlayer(rollbackRequest.player());
+        Transaction transaction = findTransaction(rollbackRequest.txn());
         
         Object object = rollbackValidation(transaction.getType(), transaction.getCanceled(), player.getBalance(), rollbackRequest.value(), transaction.getValue());
         if(object != null){
             return object;
         }
         
-        player.deposit(rollbackRequest.value());
-        playerRepository.save(player);
-
-        transaction.setCanceled(true);
-        transactionRepository.save(transaction);
+        player = deposit(player, rollbackRequest.value());
+        transaction = cancelTransaction(transaction);
 
         return new RollbackOkResponse("OK", player.getBalance());
     }
 
     public Object rollbackValidation(String type, Boolean canceled, Double balance, Double requestedValue, Double transactionValue){
-        if(type.equals("win")){
+        if(type.equals(typeWin)){
 
             return new RollbackInvalidResponse("Invalid");
         } else if(canceled == true){
@@ -95,5 +81,51 @@ public class TransactionService {
         }
 
         return null;
+    }
+
+    public Player findPlayer(Long id){
+       Player player = this.playerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Player not found!"));
+
+        return player;
+    }
+
+    public Player deposit(Player player, Double value){
+        player.deposit(value);
+        this.playerRepository.save(player);
+
+        return player;
+    }
+
+    public Player withdrawal(Player player, Double value){
+        player.withdrawal(value);
+        this.playerRepository.save(player);
+
+        return player;
+    }
+
+    public Transaction createTransaction(Player player, Double value, String type){
+        Transaction transaction = new Transaction(player, value, false, type);
+        transaction = this.transactionRepository.save(transaction);
+
+        return transaction;
+    }
+
+    public Transaction cancelTransaction(Transaction transaction){
+        transaction.setCanceled(true);
+        this.transactionRepository.save(transaction);
+
+        return transaction;
+    }
+
+     public Transaction findTransaction(long id){
+        Transaction transaction = this.transactionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found!"));
+
+        return transaction;
+    }
+
+    public BetWinResponse createBetWinResponse(Player player, Long txn){
+        return new BetWinResponse(player.getPlayerId(), player.getBalance(), txn);
     }
 }
