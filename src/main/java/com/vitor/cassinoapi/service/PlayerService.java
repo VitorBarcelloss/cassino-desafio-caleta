@@ -12,6 +12,11 @@ public class PlayerService {
     @Autowired
     PlayerRepository playerRepository;
 
+    /**
+     * Gera um usuario com o saldo zerado e id encrementado.
+     * 
+     * @return PlayerResponse contendo as informações do player gerado.
+     */
     public PlayerResponse create(){
         Player player = new Player(0.0);
         player = playerRepository.save(player);

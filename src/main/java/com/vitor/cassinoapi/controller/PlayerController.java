@@ -10,12 +10,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.vitor.cassinoapi.model.response.PlayerResponse;
 import com.vitor.cassinoapi.service.PlayerService;
 
+/**
+ * Controller responsavel pelo mapeamento referente ao player.
+ */
+
 @RestController
 @RequestMapping("/player")
 public class PlayerController {
     @Autowired
     PlayerService playerService;
 
+    /**
+     * Mapeamento responsavel por se comunicar com o metodo 'create' do service 
+     * que retorna um  novo player
+     * 
+     * @return um PlayerResponse, classe com informações do player gerado
+     */
     @PostMapping("/create")
     public ResponseEntity<PlayerResponse> create(){
         PlayerResponse player = playerService.create();

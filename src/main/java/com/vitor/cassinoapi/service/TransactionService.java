@@ -27,12 +27,27 @@ public class TransactionService {
     private static final String typeBet = "bet";
     private static final String typeWin = "win";
 
+     /**
+     * Recupera as informações de saldo de um jogador.
+     *
+     * @param playerId O ID do jogador.
+     * @return BalanceResponse contendo as informações de saldo.
+     * @throws ResourceNotFoundException Se o jogador não for encontrado.
+     */
     public BalanceResponse balance(Long playerId){
         Player player = findPlayer(playerId);
 
         return new BalanceResponse(playerId, player.getBalance());        
     }
 
+    /**
+     * Processa uma transação de aposta para um jogador.
+     *
+     * @param betWinRequest O pedido de aposta.
+     * @return BetWinResponse contendo a resposta para a transação de aposta.
+     * @throws ResourceNotFoundException Se o jogador não for encontrado.
+     * @throws ResourceBadRequestException Se houver erro na validação da transação.
+     */
     public BetWinResponse bet(BetWinRequest betWinRequest){
         Player player = findPlayer(betWinRequest.player());
         Double value = betWinRequest.value();
@@ -43,6 +58,13 @@ public class TransactionService {
         return createBetWinResponse(player, transaction.getTransactionId());
     }
 
+     /**
+     * Processa uma transação de ganho para um jogador.
+     *
+     * @param betWinRequest O pedido de ganho.
+     * @return BetWinResponse contendo a resposta para a transação de ganho.
+     * @throws ResourceNotFoundException Se o jogador não for encontrado.
+     */
     public BetWinResponse win(BetWinRequest betWinRequest){
         Player player = findPlayer(betWinRequest.player());
         Double value = betWinRequest.value();
@@ -53,6 +75,14 @@ public class TransactionService {
         return createBetWinResponse(player, transaction.getTransactionId());
     }
 
+      /**
+     * Processa uma solicitação de rollback para uma transação.
+     *
+     * @param rollbackRequest A solicitação de rollback.
+     * @return Resposta do rollback.
+     * @throws ResourceNotFoundException Se o jogador ou a transação não forem encontrados.
+     * @throws ResourceBadRequestException Se houver erro na validação do rollback.
+     */
     public Object rollback(RollbackRequest rollbackRequest){
         Player player = findPlayer(rollbackRequest.player());
         Transaction transaction = findTransaction(rollbackRequest.txn());
